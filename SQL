@@ -1,0 +1,82 @@
+CREATE DATABASE dw_penjualan;
+USE dw_penjualan;
+
+CREATE TABLE dim_pelanggan (
+    customer_key INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id VARCHAR(10),
+    company_name VARCHAR(100),
+    contact_name VARCHAR(100),
+    city VARCHAR(50),
+    country VARCHAR(50)
+);
+
+CREATE TABLE dim_produk (
+    product_key INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT,
+    product_name VARCHAR(100),
+    category_name VARCHAR(50),
+    unit_price DECIMAL(10,2),
+    discontinued BOOLEAN
+);
+
+CREATE TABLE dim_karyawan (
+    employee_key INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT,
+    employee_name VARCHAR(100),
+    title VARCHAR(50),
+    city VARCHAR(50),
+    country VARCHAR(50)
+);
+
+CREATE TABLE dim_pengirim (
+    shipper_key INT AUTO_INCREMENT PRIMARY KEY,
+    shipper_id INT,
+    company_name VARCHAR(100)
+);
+
+CREATE TABLE dim_waktu (
+    time_key INT AUTO_INCREMENT PRIMARY KEY,
+    tanggal DATE,
+    hari INT,
+    bulan INT,
+    nama_bulan VARCHAR(20),
+    tahun INT,
+    kuartal INT
+);
+
+CREATE TABLE fact_penjualan (
+    sales_key INT AUTO_INCREMENT PRIMARY KEY,
+
+    time_key INT,
+    customer_key INT,
+    product_key INT,
+    employee_key INT,
+    shipper_key INT,
+
+    quantity INT,
+    unit_price DECIMAL(10,2),
+    discount DECIMAL(5,2),
+    total_penjualan DECIMAL(12,2),
+
+    FOREIGN KEY (time_key) REFERENCES dim_waktu(time_key),
+    FOREIGN KEY (customer_key) REFERENCES dim_pelanggan(customer_key),
+    FOREIGN KEY (product_key) REFERENCES dim_produk(product_key),
+    FOREIGN KEY (employee_key) REFERENCES dim_karyawan(employee_key),
+    FOREIGN KEY (shipper_key) REFERENCES dim_pengirim(shipper_key)
+);
+
+SELECT SUM(total_penjualan) AS total_penjualan
+FROM fact_penjualan;
+
+SELECT w.tahun, SUM(f.total_penjualan) AS total_penjualan
+FROM fact_penjualan f
+JOIN dim_waktu w ON f.time_key = w.time_key
+GROUP BY w.tahun;
+
+SELECT p.product_name, SUM(f.quantity) AS total_terjual
+FROM fact_penjualan f
+JOIN dim_produk p ON f.product_key = p.product_key
+GROUP BY p.product_name
+ORDER BY total_terjual DESC
+LIMIT 5;
+
